@@ -6,6 +6,7 @@ TOTAL_CARDS = 79
 
 CARD_PROBS = {i: i / TOTAL_CARDS for i in range(1, 13)}
 CARD_PROBS[0] = 1 / TOTAL_CARDS
+print(sum(CARD_PROBS[card] for card in CARD_PROBS))
 
 FLIP_BONUS = 15
 
@@ -47,9 +48,22 @@ class StatsLookup:
         hand_prob = 1.0
         for card in hand_key:
             hand_prob *= CARD_PROBS[card]
+
+        hand_sum = sum(hand)
+        next_turn_val = 0.0
+        next_turn_bust_prob = 0.0
+        for card in CARD_PROBS:
+            if card in hand:
+                next_turn_val += -1 * hand_sum * CARD_PROBS[card]
+                next_turn_bust_prob += CARD_PROBS[card]
+            else:
+                next_turn_val += card * CARD_PROBS[card]
+
         return {
             'e_score': hand_stats.e_score / (hand_prob),
             'bust_prob': hand_stats.bust_prob / (hand_prob),
+            'next_turn_val': next_turn_val,
+            'next_turn_bust_prob': next_turn_bust_prob,
         }
 
 
@@ -85,9 +99,13 @@ class StatsLookup:
             cards.pop()
 
 
-stats_lookup = StatsLookup()
-stats_lookup.compute_stats(LIMIT, tqdm_fn = tqdm)
-with open('flip_seven_stats.pkl','wb') as f:
-    pickle.dump(stats_lookup, f)
+try:
+    with open('flip_seven_stats.pkl','rb') as f:
+        stats_lookup = pickle.load(f)
+except FileNotFoundError:
+    stats_lookup = StatsLookup()
+    stats_lookup.compute_stats(LIMIT, tqdm_fn = tqdm)
+    with open('flip_seven_stats.pkl','wb') as f:
+        pickle.dump(stats_lookup, f)
 
 breakpoint()
